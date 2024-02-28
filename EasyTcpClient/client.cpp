@@ -5,6 +5,9 @@
 #include<iostream>
 #pragma comment(lib,"ws2_32.lib")
 
+const int CMD_BUFF = 128;
+const int RECV_BUFF = 128;
+
 
 int main()
 {
@@ -28,19 +31,54 @@ int main()
 	if (SOCKET_ERROR == connect(_sock, (sockaddr*)&_serverAddr, sizeof(_serverAddr)))
 	{
 		std::cerr << "connect() error" << std::endl;
+		
 	}
 	else
 	{
-		std::cout << "connetc success" << std::endl;
-		char _buff[100] = { 0 };
-		int _recvLen = recv(_sock, _buff, 100, 0);
-		std::cout << "SERVER MESSAGE: " << _buff << std::endl;
+		std::cout << "connect server success" << std::endl;
+		char _cmdBuff[CMD_BUFF] = { 0 };
+		char _recvBuff[RECV_BUFF] = { 0 };
+		while (true)
+		{
+			memset(_cmdBuff, 0, CMD_BUFF);
+			memset(_recvBuff, 0, RECV_BUFF);
+			std::cout << "请输入cmd命令:";
+			std::cin >> _cmdBuff;
+			if (0 == strcmp(_cmdBuff, "quit"))
+			{
+				std::cout << "client close" << std::endl;
+				
+				int _sendLen = send(_sock, _cmdBuff, CMD_BUFF, 0);
+				if (_sendLen <= 0)
+				{
+					std::cerr << "send() error" << std::endl;
+				}
+				break;
+			}
+			int _sendLen = send(_sock, _cmdBuff, CMD_BUFF, 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send() error" << std::endl;
+			}
+			//开始接受服务端的数据
+			int _recvLen = recv(_sock, _recvBuff, RECV_BUFF, 0);
+			if (_recvLen <= 0)
+			{
+				std::cerr << "recv() error" << std::endl;
+			}
+			std::cout << "SERVER MESSAGE:" << _recvBuff << std::endl;
+
+
+		}
 	}
+	
+
 
 	closesocket(_sock);
 
 
 	//6.关闭socket 环境
 	WSACleanup();
+	getchar();
 	return 0;
 }

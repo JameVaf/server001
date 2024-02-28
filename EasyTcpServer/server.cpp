@@ -1,11 +1,12 @@
 
+#pragma warning(disable : 4996)
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include<Winsock2.h>
 #include<Windows.h>
 #include<iostream>
 #pragma comment(lib,"ws2_32.lib")
 
-
+const int RECV_BUFF_LEN = 128;
 int main()
 {
 	//1.启动windows socket的编程环境
@@ -48,27 +49,62 @@ int main()
 	//5.accept 接受客户端
 
 	struct sockaddr_in _clientAddr;
+	memset(&_clientAddr, 0, sizeof(struct sockaddr_in));
+	SOCKET _clientSock = INVALID_SOCKET;
+	int _clientLen = sizeof(_clientAddr);
+	_clientSock = accept(_sock, (sockaddr*)&_clientAddr, &_clientLen);
+	if (INVALID_SOCKET == _clientSock)
+	{
+		std::cerr << "accept() Error,Error Code: " << WSAGetLastError() << std::endl;
+	}
+	else
+	{
+
+		std::cout << "client ip is: " << inet_ntoa(_clientAddr.sin_addr) << std::endl;
+		 
+	}
 	
-	char message[] = "I'am server";
+	char _recvBuff[RECV_BUFF_LEN] = { 0 };
 	while (true)
 	{
-		memset(&_clientAddr, 0, sizeof(struct sockaddr_in));
-		  
-		SOCKET _clientSock = INVALID_SOCKET;
-		int _clientLen = sizeof(_clientAddr);
-		_clientSock = accept(_sock, (sockaddr*)&_clientAddr, &_clientLen);
-		if (INVALID_SOCKET == _clientSock)
+		int _recvLen = recv(_clientSock, _recvBuff, RECV_BUFF_LEN, 0);
+		if (_recvLen <= 0)
 		{
-			std::cerr << "accept() Error,Error Code: "<<WSAGetLastError() << std::endl;
+			std::cout << "client error" << std::endl;
+		}
+
+		char _sendBuff[128] = {0};
+		//开始读取信息
+		if (0 == strcmp(_recvBuff, "getName"))
+		{
+			char tempstr[] = "xiangqiang";
+			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
+		}
+		else if (0 == strcmp(_recvBuff, "getAge"))
+		{
+			char tempstr[] = "18";
+			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
+		}
+		else if (0 == strcmp(_recvBuff, "quit"))
+		{
+			std::cout << "quit server" << std::endl;
+			break;
 		}
 		else
 		{
-			int _sendSize = send(_clientSock, message, strlen(message) + 1, 0);
-			std::cout << "client ip is: " << inet_ntoa(_clientAddr.sin_addr) << std::endl;
-			closesocket(_clientSock);
+			char tempstr[] = "don't know cmd,\nplease enter in agein";
+			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
 		}
+		int _sendLen = send(_clientSock, _sendBuff, strlen(_sendBuff) + 1, 0);
+		if (_sendLen <= 0)
+		{
+			std::cerr << "send() error" << std::endl;
+		}
+		  
+
 	}
 	//关闭套接字 
+	closesocket(_clientSock);
 	closesocket(_sock);
 
 
