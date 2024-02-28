@@ -1,0 +1,5 @@
+﻿  server.cpp
+C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(28,43): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(57,15): warning C4553: “==”: 未使用表达式结果；是否打算使用“=”?
+C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(64,63): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+  EasyTcpServer.vcxproj -> C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\x64\Debug\EasyTcpServer.exe
