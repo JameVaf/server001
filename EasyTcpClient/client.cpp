@@ -8,6 +8,12 @@
 const int CMD_BUFF = 128;
 const int RECV_BUFF = 128;
 
+typedef struct dataPack
+{
+	int age;
+	char name[32];      
+}dataPack;
+
 
 int main()
 {
@@ -35,6 +41,7 @@ int main()
 	}
 	else
 	{
+
 		std::cout << "connect server success" << std::endl;
 		char _cmdBuff[CMD_BUFF] = { 0 };
 		char _recvBuff[RECV_BUFF] = { 0 };
@@ -66,7 +73,8 @@ int main()
 			{
 				std::cerr << "recv() error" << std::endl;
 			}
-			std::cout << "SERVER MESSAGE:" << _recvBuff << std::endl;
+			std::cout << "SERVER MESSAGE: name " << ((dataPack*)_recvBuff)->name <<" age: "<< ((dataPack*)_recvBuff)->age << std::endl;
+
 
 
 		}

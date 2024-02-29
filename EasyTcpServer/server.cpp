@@ -6,7 +6,15 @@
 #include<iostream>
 #pragma comment(lib,"ws2_32.lib")
 
+
 const int RECV_BUFF_LEN = 128;
+const int SEND_BUFF_LEN = 128;
+typedef struct dataPack
+{
+	int age ;
+	char name[32] ;
+
+}dataPack;
 int main()
 {
 	//1.启动windows socket的编程环境
@@ -67,23 +75,22 @@ int main()
 	char _recvBuff[RECV_BUFF_LEN] = { 0 };
 	while (true)
 	{
+		memset(_recvBuff, 0, RECV_BUFF_LEN);
 		int _recvLen = recv(_clientSock, _recvBuff, RECV_BUFF_LEN, 0);
 		if (_recvLen <= 0)
 		{
 			std::cout << "client error" << std::endl;
 		}
 
-		char _sendBuff[128] = {0};
+		char _sendBuff[SEND_BUFF_LEN] = {0};
 		//开始读取信息
-		if (0 == strcmp(_recvBuff, "getName"))
+		if (0 == strcmp(_recvBuff, "getInfo"))
 		{
-			char tempstr[] = "xiangqiang";
-			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
-		}
-		else if (0 == strcmp(_recvBuff, "getAge"))
-		{
-			char tempstr[] = "18";
-			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
+
+			dataPack p{18,"xiaoqiang"};
+			std::cout << "TEST:" << p.name << p.age << std::endl;
+			memcpy(_sendBuff,  (char*)&p, sizeof(dataPack));
+			std::cout << "TEST:" << ((dataPack*)_sendBuff)->name << ((dataPack*)_sendBuff)->age << std::endl;
 		}
 		else if (0 == strcmp(_recvBuff, "quit"))
 		{
@@ -95,7 +102,8 @@ int main()
 			char tempstr[] = "don't know cmd,\nplease enter in agein";
 			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
 		}
-		int _sendLen = send(_clientSock, _sendBuff, strlen(_sendBuff) + 1, 0);
+		std::cout << "Test: " << ((dataPack*)_sendBuff)->name << " " << ((dataPack*)_sendBuff)->age << std::endl;
+		int _sendLen = send(_clientSock, _sendBuff,SEND_BUFF_LEN , 0);
 		if (_sendLen <= 0)
 		{
 			std::cerr << "send() error" << std::endl;
