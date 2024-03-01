@@ -6,15 +6,54 @@
 #include<iostream>
 #pragma comment(lib,"ws2_32.lib")
 
-
 const int RECV_BUFF_LEN = 128;
 const int SEND_BUFF_LEN = 128;
-typedef struct dataPack
-{
-	int age ;
-	char name[32] ;
 
-}dataPack;
+enum class  CMD
+{
+	CMD_LOGIN,
+	CMD_LOGOUT,
+	CMD_LOGIN_RESULT,
+	CMD_LOGOUT_RESULT,
+	CMD_QUIT,
+	CMD_ERROR //待定
+};
+
+
+
+
+
+typedef struct DataHeader
+{
+	CMD cmd_;
+	int length_;
+
+}DataHeader;
+
+
+typedef struct LOGIN:public DataHeader
+{
+	char name_[30] = { 0 };
+	char password_[30] = { 0 };
+}LOGIN;
+
+typedef struct LOGOUT :public DataHeader
+{
+	char name_[30] = { 0 };
+}LOGOUT;
+
+typedef struct LOGIN_RESULT :public DataHeader
+{
+	bool result_ = false;
+}LOGIN_RESULT;
+
+typedef struct LOGOUT_RESULT :public DataHeader
+{
+	bool result_ = false;
+}LOGOUT_RESULT;
+
+
+ 
 int main()
 {
 	//1.启动windows socket的编程环境
@@ -71,43 +110,106 @@ int main()
 		std::cout << "client ip is: " << inet_ntoa(_clientAddr.sin_addr) << std::endl;
 		 
 	}
-	
+	//接受客户端的数据
 	char _recvBuff[RECV_BUFF_LEN] = { 0 };
-	while (true)
+	char _sendBuff[SEND_BUFF_LEN] = { 0 };
+
+	bool is_run = true;
+	while (is_run)
 	{
 		memset(_recvBuff, 0, RECV_BUFF_LEN);
-		int _recvLen = recv(_clientSock, _recvBuff, RECV_BUFF_LEN, 0);
+		memset(_sendBuff, 0, SEND_BUFF_LEN);
+
+		DataHeader _header;
+		//读取客户端的数据
+		int _recvLen = recv(_clientSock,(char*)&_header,sizeof(DataHeader), 0);
 		if (_recvLen <= 0)
 		{
 			std::cout << "client error" << std::endl;
 		}
 
-		char _sendBuff[SEND_BUFF_LEN] = {0};
-		//开始读取信息
-		if (0 == strcmp(_recvBuff, "getInfo"))
-		{
 
-			dataPack p{18,"xiaoqiang"};
-			std::cout << "TEST:" << p.name << p.age << std::endl;
-			memcpy(_sendBuff,  (char*)&p, sizeof(dataPack));
-			std::cout << "TEST:" << ((dataPack*)_sendBuff)->name << ((dataPack*)_sendBuff)->age << std::endl;
-		}
-		else if (0 == strcmp(_recvBuff, "quit"))
+		
+		//开始读取信息
+		switch(_header.cmd_)
 		{
-			std::cout << "quit server" << std::endl;
+		case CMD::CMD_LOGIN :
+		{
+			LOGIN temp ;
+			memset(&temp, 0, sizeof(LOGIN));
+			//读取LOGIN的相关数据
+			int _recvLen = recv(_clientSock, (char*)&temp + sizeof(DataHeader), sizeof(LOGIN)-sizeof(DataHeader), 0);
+			if (_recvLen <= 0)
+			{
+				std::cout << "client error" << std::endl;
+			}
+			std::cout << "LOGIN  Name:" << temp.name_ << " PassWord:" << temp.password_ << std::endl;
+
+			LOGIN_RESULT _result;
+			memset(&_result, 0, sizeof(LOGIN_RESULT));
+			_result.cmd_ = CMD::CMD_LOGIN_RESULT;
+			_result.length_ = sizeof(LOGIN_RESULT);
+			_result.result_ = true;
+
+			int _sendLen = send(_clientSock, (char*)&_result, sizeof(LOGIN_RESULT), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send LOGIN_RESULT ERROR" << std::endl;
+			}
+
+
+
+		}
+		break;
+		case CMD::CMD_LOGOUT :	
+		{
+			LOGOUT temp;
+			memset(&temp, 0, sizeof(temp));
+			//读取LOGOUT的相关数据
+			int _recvLen = recv(_clientSock, (char*)&temp + sizeof(DataHeader), sizeof(LOGOUT) - sizeof(DataHeader), 0);
+			if (_recvLen <= 0)
+			{
+				std::cout << "client error" << std::endl;
+			}
+			std::cout << "LOGOUT  Name:" << temp.name_ << std::endl;
+
+			LOGOUT_RESULT _result;
+			memset(&_result, 0, sizeof(LOGOUT_RESULT));
+			_result.cmd_ = CMD::CMD_LOGOUT_RESULT;
+			_result.length_ = sizeof(LOGOUT_RESULT);
+			_result.result_ = true;
+
+			int _sendLen = send(_clientSock, (char*)&_result, sizeof(LOGOUT_RESULT), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send LOGOUT_RESULT ERROR" << std::endl;
+			}
+		}
+			break;
+		case CMD::CMD_QUIT:
+		{
+			std::cout << "server quit" << std::endl;
+			is_run = false;
+		}
+			break;
+		default:
+		{
+			std::cout << "I don't know CMD" << std::endl;
+			DataHeader _result;
+			memset(&_result, 0, sizeof(_result));
+			_result.cmd_ = CMD::CMD_ERROR;
+			_result.length_ = sizeof(DataHeader);
+			int _sendLen = send(_clientSock, (char*)&_result, sizeof(DataHeader), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send LOGIN_ERROR ERROR" << std::endl;
+			}
+			
+		}
 			break;
 		}
-		else
-		{
-			char tempstr[] = "don't know cmd,\nplease enter in agein";
-			strncpy(_sendBuff, tempstr, strlen(tempstr) + 1);
-		}
-		std::cout << "Test: " << ((dataPack*)_sendBuff)->name << " " << ((dataPack*)_sendBuff)->age << std::endl;
-		int _sendLen = send(_clientSock, _sendBuff,SEND_BUFF_LEN , 0);
-		if (_sendLen <= 0)
-		{
-			std::cerr << "send() error" << std::endl;
-		}
+		
+	
 		  
 
 	}
