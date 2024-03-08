@@ -2,11 +2,15 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include<Winsock2.h>
 #include<Windows.h>
-#include<iostream>
+#include<iostream> 
+#include<thread>
 #pragma comment(lib,"ws2_32.lib")
 
 const int CMD_BUFF = 128;
 const int RECV_BUFF = 128;
+
+char _cmdBuff[CMD_BUFF] = { 0 };
+char _recvBuff[RECV_BUFF] = { 0 };
 
 enum class  CMD
 {
@@ -23,6 +27,9 @@ enum class  CMD
 const int RECV_BUFF_LEN = 128;
 const int SEND_BUFF_LEN = 128;
 
+//输入数据的线程函数
+void processCmd(SOCKET sock);
+//
 typedef struct DataHeader
 {
 	CMD cmd_;
@@ -66,6 +73,8 @@ int main()
 	//2.创建socket套接字
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	
+
 	//3.进行connet
 	struct sockaddr_in _serverAddr;
 	_serverAddr.sin_family = AF_INET;
@@ -79,77 +88,34 @@ int main()
 	}
 	else
 	{
-
 		std::cout << "connect server success" << std::endl;
-		char _cmdBuff[CMD_BUFF] = { 0 };
-		char _recvBuff[RECV_BUFF] = { 0 };
+	}
 
-		while (true)
-		{
-			memset(_cmdBuff, 0, CMD_BUFF);
-			memset(_recvBuff, 0, RECV_BUFF);
-			std::cout << "请输入cmd命令:";
-			std::cin >> _cmdBuff;
-			if (0 == strcmp(_cmdBuff, "quit"))
-			{
-				DataHeader head;
-				memset(&head, 0, sizeof(head));
-				head.cmd_ = CMD::CMD_QUIT;
-				head.length_ = sizeof(head);
-				int _sendLen = send(_sock, (char*)&head, sizeof(head),0);
-				if (_sendLen <= 0)
-				{
-					std::cerr << "send quit to server Error" << std::endl;
-				}
-
-				break;
-			}
-			else if (0 == strcmp(_cmdBuff, "login"))
-			{
-				LOGIN temp;
-				memset(&temp, 0, sizeof(temp));
-				temp.cmd_ = CMD::CMD_LOGIN;
-				temp.length_ = sizeof(temp);
-				std::cout << "请输入名字:";
-				std::cin >> temp.name_;
-				std::cout << std::endl;
-				std::cout << "请输入密码:";
-				std::cin >> temp.password_;
-				std::cout << std::endl;
-				int _sendLen = send(_sock, (char*)&temp, sizeof(temp),0);
-				if (_sendLen <= 0)
-				{
-					std::cerr << "send Login server Error" << std::endl;
-				}
-					
-			}
-			else if (0 == strcmp(_cmdBuff, "logout"))
-			{
-				LOGOUT temp;
-				memset(&temp, 0, sizeof(temp));
-				temp.cmd_ = CMD::CMD_LOGOUT;
-				temp.length_ = sizeof(temp);
-				std::cout << "请输入名字:";
-				std::cin >> temp.name_;
-				std::cout << std::endl;
+	//3.开启一个线程,发送数据命令
+	std::thread t(processCmd, _sock);
 	
-				int _sendLen = send(_sock, (char*)&temp, sizeof(temp),0);
-				if (_sendLen <= 0)
-				{
-					std::cerr << "send Login server Error" << std::endl;
-				}
 
-			}
-			else
-			{
-				std::cout << "input Error! please input login or logout or quit " << std::endl;
-				continue;
-			}
 
+	//3.进行select
+	while (true)
+	{
+		fd_set fdRead;
+		FD_ZERO(&fdRead);
+		FD_SET(_sock, &fdRead);
+
+		timeval _time = { 2,0 };
+		int ret = select(_sock + 1, &fdRead, nullptr, nullptr, nullptr);
+		if (ret < 0)
+		{
+			std::cout << "select error" << std::endl;
+		}
+
+		if (FD_ISSET(_sock, &fdRead))	//服务器返回数据
+		{
 			//开始接受服务端的数据
 			DataHeader data;
 			memset(&data, 0, sizeof(data));
-			int _recvLen = recv(_sock,(char*) & data, sizeof(data), 0);
+			int _recvLen = recv(_sock, (char*)&data, sizeof(data), 0);
 			if (_recvLen <= 0)
 			{
 				std::cerr << "recv from server Error" << std::endl;
@@ -157,68 +123,56 @@ int main()
 
 			switch (data.cmd_)
 			{
-				case CMD::CMD_LOGIN_RESULT:
+			case CMD::CMD_LOGIN_RESULT:
+			{
+				LOGIN_RESULT temp;
+				memset(&temp, 0, sizeof(temp));
+				int _recvLen = recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGIN_RESULT) - sizeof(DataHeader), 0);
+				if (_recvLen <= 0)
 				{
-					LOGIN_RESULT temp;
-					memset(&temp, 0, sizeof(temp));
-					int _recvLen = recv(_sock, (char*)&temp+sizeof(DataHeader), sizeof(LOGIN_RESULT)-sizeof(DataHeader), 0);
-					if (_recvLen <= 0)
-					{
-						std::cerr << "recv from server Login result Error" << std::endl;
-					}
-					if (temp.result_)
-					{
-						std::cout << "登录成功" << std::endl;
-					}
-					else
-					{
-						std::cout << "登录失败" << std::endl;
-					}
+					std::cerr << "recv from server Login result Error" << std::endl;
 				}
-				break;
-				case CMD::CMD_LOGOUT_RESULT:
+				if (temp.result_)
 				{
-					LOGOUT_RESULT temp;
-					memset(&temp, 0, sizeof(temp));
-					int _recvLen = recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGOUT_RESULT) - sizeof(DataHeader), 0);
-					if (_recvLen <= 0)
-					{
-						std::cerr << "recv from server Logout result Error" << std::endl;
-					}
-					if (temp.result_)
-					{
-						std::cout << "登出成功" << std::endl;
-					}
-					else
-					{
-						std::cout << "登出失败" << std::endl;
-					}
+					std::cout << "登录成功" << std::endl;
 				}
-				break;
-				default:
+				else
 				{
-					std::cout << "from server Error" << std::endl;
+					std::cout << "登录失败" << std::endl;
 				}
-				break;
 			}
-	
-			
-			
+			break;
+			case CMD::CMD_LOGOUT_RESULT:
+			{
+				LOGOUT_RESULT temp;
+				memset(&temp, 0, sizeof(temp));
+				int _recvLen = recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGOUT_RESULT) - sizeof(DataHeader), 0);
+				if (_recvLen <= 0)
+				{
+					std::cerr << "recv from server Logout result Error" << std::endl;
+				}
+				if (temp.result_)
+				{
+					std::cout << "登出成功" << std::endl;
+				}
+				else
+				{
+					std::cout << "登出失败" << std::endl;
+				}
+			}
+			break;
+			default:
+			{
+				std::cout << "from server Error" << std::endl;
+			}
+			break;
+			}
 		}
 
-
-			
-
-
-	
-
-
-
-		
 	}
 	
 
-
+	t.join();
 	closesocket(_sock);
 
 
@@ -227,3 +181,77 @@ int main()
 	getchar();
 	return 0;
 }
+
+//输入数据的线程函数
+void processCmd(SOCKET sock)
+{
+	while (true)
+	{
+		memset(_cmdBuff, 0, CMD_BUFF);
+		memset(_recvBuff, 0, RECV_BUFF);
+		std::cout << "请输入cmd命令:";
+		std::cin >> _cmdBuff;
+		if (0 == strcmp(_cmdBuff, "quit"))
+		{
+			DataHeader head;
+			memset(&head, 0, sizeof(head));
+			head.cmd_ = CMD::CMD_QUIT;
+			head.length_ = sizeof(head);
+			int _sendLen = send(sock, (char*)&head, sizeof(head), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send quit to server Error" << std::endl;
+			}
+
+			break;
+		}
+		else if (0 == strcmp(_cmdBuff, "login"))
+		{
+			LOGIN temp;
+			memset(&temp, 0, sizeof(temp));
+			temp.cmd_ = CMD::CMD_LOGIN;
+			temp.length_ = sizeof(temp);
+			std::cout << "请输入名字:";
+			std::cin >> temp.name_;
+			std::cout << std::endl;
+			std::cout << "请输入密码:";
+			std::cin >> temp.password_;
+			std::cout << std::endl;
+			int _sendLen = send(sock, (char*)&temp, sizeof(temp), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send Login server Error" << std::endl;
+			}
+
+		}
+		else if (0 == strcmp(_cmdBuff, "logout"))
+		{
+			LOGOUT temp;
+			memset(&temp, 0, sizeof(temp));
+			temp.cmd_ = CMD::CMD_LOGOUT;
+			temp.length_ = sizeof(temp);
+			std::cout << "请输入名字:";
+			std::cin >> temp.name_;
+			std::cout << std::endl;
+
+			int _sendLen = send(sock, (char*)&temp, sizeof(temp), 0);
+			if (_sendLen <= 0)
+			{
+				std::cerr << "send Login server Error" << std::endl;
+			}
+
+		}
+		else
+		{
+			std::cout << "input Error! please input login or logout or quit " << std::endl;
+			continue;
+		}
+
+
+
+
+
+	}
+
+};
+
