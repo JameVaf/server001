@@ -1,7 +1,0 @@
-﻿G:\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(516,5): warning MSB8004: Intermediate 目录未以斜杠结尾。  此生成实例将添加斜杠，因为必须有这个斜杠才能正确计算 Intermediate 目录。
-G:\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(517,5): warning MSB8004: Output 目录未以斜杠结尾。  此生成实例将添加斜杠，因为必须有这个斜杠才能正确计算 Output 目录。
-  server.cpp
-C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(84,43): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(135,26): warning C4244: “参数”: 从“SOCKET”转换到“int”，可能丢失数据
-C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\server.cpp(169,22): warning C4018: “<”: 有符号/无符号不匹配
-  EasyTcpServer.vcxproj -> C:\Users\vaf\Desktop\CPlusPlus\server001\EasyTcpServer\bin\x64\Debug\EasyTcpServer.exe
