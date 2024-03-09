@@ -1,10 +1,27 @@
-
+#pragma warning(disable : 4996)
+#ifdef  _WIN32
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include<Winsock2.h>
 #include<Windows.h>
+
+#elif __linux__
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<string.h>
+#define SOCKET int
+#define INVALID SOCKET (SOCKET)(-0)
+#define SOCKET_ERROR		   (-1)
+#endif //  _WIN32
+
+
 #include<iostream> 
 #include<thread>
+
+#ifdef _WIN32
 #pragma comment(lib,"ws2_32.lib")
+#endif // _WIN32
+
+
 
 const int CMD_BUFF = 128;
 const int RECV_BUFF = 128;
@@ -62,6 +79,7 @@ typedef struct LOGOUT_RESULT :public DataHeader
 
 int main()
 {
+#ifdef _WIN32
 	//1.启动windows socket的编程环境
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
@@ -69,6 +87,9 @@ int main()
 	{
 		std::cerr << "WSAStartup() error" << std::endl;
 	}
+#endif // _WIN32
+
+
 
 	//2.创建socket套接字
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -115,7 +136,7 @@ int main()
 			//开始接受服务端的数据
 			DataHeader data;
 			memset(&data, 0, sizeof(data));
-			int _recvLen = recv(_sock, (char*)&data, sizeof(data), 0);
+			int _recvLen =(int)recv(_sock, (char*)&data, sizeof(data), 0);
 			if (_recvLen <= 0)
 			{
 				std::cerr << "recv from server Error" << std::endl;
@@ -127,7 +148,7 @@ int main()
 			{
 				LOGIN_RESULT temp;
 				memset(&temp, 0, sizeof(temp));
-				int _recvLen = recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGIN_RESULT) - sizeof(DataHeader), 0);
+				int _recvLen = (int)recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGIN_RESULT) - sizeof(DataHeader), 0);
 				if (_recvLen <= 0)
 				{
 					std::cerr << "recv from server Login result Error" << std::endl;
@@ -146,7 +167,7 @@ int main()
 			{
 				LOGOUT_RESULT temp;
 				memset(&temp, 0, sizeof(temp));
-				int _recvLen = recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGOUT_RESULT) - sizeof(DataHeader), 0);
+				int _recvLen =(int)recv(_sock, (char*)&temp + sizeof(DataHeader), sizeof(LOGOUT_RESULT) - sizeof(DataHeader), 0);
 				if (_recvLen <= 0)
 				{
 					std::cerr << "recv from server Logout result Error" << std::endl;
@@ -170,14 +191,24 @@ int main()
 		}
 
 	}
-	
+	 
 
 	t.join();
+
+#ifdef _WIN32
 	closesocket(_sock);
+#elif __linux__
+	close(_sock);
+#endif // _WIN32
 
 
+
+#ifdef _WIN32
 	//6.关闭socket 环境
 	WSACleanup();
+#endif // _WIN32
+
+
 	getchar();
 	return 0;
 }
@@ -197,7 +228,7 @@ void processCmd(SOCKET sock)
 			memset(&head, 0, sizeof(head));
 			head.cmd_ = CMD::CMD_QUIT;
 			head.length_ = sizeof(head);
-			int _sendLen = send(sock, (char*)&head, sizeof(head), 0);
+			int _sendLen =(int)send(sock, (char*)&head, sizeof(head), 0);
 			if (_sendLen <= 0)
 			{
 				std::cerr << "send quit to server Error" << std::endl;
@@ -217,7 +248,7 @@ void processCmd(SOCKET sock)
 			std::cout << "请输入密码:";
 			std::cin >> temp.password_;
 			std::cout << std::endl;
-			int _sendLen = send(sock, (char*)&temp, sizeof(temp), 0);
+			int _sendLen = (int)send(sock, (char*)&temp, sizeof(temp), 0);
 			if (_sendLen <= 0)
 			{
 				std::cerr << "send Login server Error" << std::endl;
@@ -234,7 +265,7 @@ void processCmd(SOCKET sock)
 			std::cin >> temp.name_;
 			std::cout << std::endl;
 
-			int _sendLen = send(sock, (char*)&temp, sizeof(temp), 0);
+			int _sendLen = (int)send(sock, (char*)&temp, sizeof(temp), 0);
 			if (_sendLen <= 0)
 			{
 				std::cerr << "send Login server Error" << std::endl;

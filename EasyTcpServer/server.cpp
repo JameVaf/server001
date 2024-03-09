@@ -1,11 +1,35 @@
 
 #pragma warning(disable : 4996)
+
+#ifdef  _WIN32
+
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include<Winsock2.h>
 #include<Windows.h>
+
+#elif  __linux__
+
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<string.h>
+#define SOCKET int
+#define INVALID SOCKET (SOCKET)(-0)
+#define SOCKET_ERROR		   (-1)
+
+#endif //  _WIN32
+
+
+
+
+
 #include<iostream>
 #include<vector>
+
+#ifdef _WIN32
 #pragma comment(lib,"ws2_32.lib")
+#endif // _WIN32
+
+
 
 const int RECV_BUFF_LEN = 128;
 const int SEND_BUFF_LEN = 128;
@@ -65,12 +89,15 @@ bool process(SOCKET sock);
 int main()
 {
 	//1.启动windows socket的编程环境
+
+#ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
 	if (0 != WSAStartup(ver, &dat))
 	{
 		std::cerr << "WSAStartup() error" << std::endl;
 	}
+#endif
 	
 	//2.创建socket套接字
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -171,20 +198,11 @@ int main()
 				process(fdRead.fd_array[i]);
 			}
 		}
-
 		
-
-
-
-
-
-		
-		
-		
-	
-		  
 
 	}
+
+#ifdef  _WIN32
 	//关闭已连接的套接字 
 	for (auto iter : g_cVector)
 	{
@@ -196,13 +214,23 @@ int main()
 
 	//6.关闭socket 环境
 	WSACleanup();
+#else
+
+	for (auto iter : g_cVector)
+	{
+		close(iter);
+	}
+	close(_sock)
+#endif //  _WIN32
+
+
 	return 0;
 }
 
 //处理客户端的数据
 bool process(SOCKET sock)
 {
-	int _recvLen = recv(sock, _recvBuff, sizeof(DataHeader), 0);
+	int _recvLen = (int)recv(sock, _recvBuff, sizeof(DataHeader), 0);//unsafe
 	if (_recvLen < 0)
 	{
 		std::cout << "套接字" << sock << " 断开连接..." << std::endl;
@@ -224,7 +252,7 @@ bool process(SOCKET sock)
 	{
 	
 		//读取LOGIN的相关数据
-		int _recvLen = recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGIN) - sizeof(DataHeader), 0);
+		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGIN) - sizeof(DataHeader), 0);//unsafe
 		if (_recvLen <= 0)
 		{
 			std::cout << "client error" << std::endl;
@@ -255,7 +283,7 @@ bool process(SOCKET sock)
 	{
 		
 		//读取LOGOUT的相关数据
-		int _recvLen = recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGOUT) - sizeof(DataHeader), 0);
+		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGOUT) - sizeof(DataHeader), 0); //unsafe
 		if (_recvLen <= 0)
 		{
 			std::cout << "client error" << std::endl;
@@ -268,7 +296,7 @@ bool process(SOCKET sock)
 		((LOGOUT_RESULT*)_sendBuff)->length_ = sizeof(LOGOUT_RESULT);
 		((LOGOUT_RESULT*)_sendBuff)->result_ = true;
 
-		int _sendLen = send(sock, _sendBuff, sizeof(LOGOUT_RESULT), 0);
+		int _sendLen = (int)send(sock, _sendBuff, sizeof(LOGOUT_RESULT), 0);//unsafe
 		if (_sendLen <= 0)
 		{
 			std::cerr << "send LOGOUT_RESULT ERROR" << std::endl;
@@ -292,7 +320,7 @@ bool process(SOCKET sock)
 
 		((DataHeader*)_sendBuff)->cmd_ = CMD::CMD_ERROR;
 		((DataHeader*)_sendBuff)->length_ = sizeof(DataHeader);
-		int _sendLen = send(sock, _sendBuff, sizeof(DataHeader), 0);
+		int _sendLen = (int)send(sock, _sendBuff, sizeof(DataHeader), 0);
 		if (_sendLen <= 0)
 		{
 			std::cerr << "send LOGIN_ERROR ERROR" << std::endl;
