@@ -9,7 +9,7 @@
 #include<arpa/inet.h>
 #include<string.h>
 #define SOCKET int
-#define INVALID SOCKET (SOCKET)(-0)
+#define INVALID_SOCKET (SOCKET)(-0)
 #define SOCKET_ERROR		   (-1)
 #endif //  _WIN32
 
@@ -36,7 +36,7 @@ enum class  CMD
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT_RESULT,
 	CMD_QUIT,
-	CMD_ERROR //´ý¶¨
+	CMD_ERROR //ï¿½ï¿½ï¿½ï¿½
 };
 
 
@@ -44,7 +44,7 @@ enum class  CMD
 const int RECV_BUFF_LEN = 128;
 const int SEND_BUFF_LEN = 128;
 
-//ÊäÈëÊý¾ÝµÄÏß³Ìº¯Êý
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½ß³Ìºï¿½ï¿½ï¿½
 void processCmd(SOCKET sock);
 //
 typedef struct DataHeader
@@ -80,7 +80,7 @@ typedef struct LOGOUT_RESULT :public DataHeader
 int main()
 {
 #ifdef _WIN32
-	//1.Æô¶¯windows socketµÄ±à³Ì»·¾³
+	//1.ï¿½ï¿½ï¿½ï¿½windows socketï¿½Ä±ï¿½Ì»ï¿½ï¿½ï¿½
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
 	if (0 != WSAStartup(ver, &dat))
@@ -91,15 +91,15 @@ int main()
 
 
 
-	//2.´´½¨socketÌ×½Ó×Ö
+	//2.ï¿½ï¿½ï¿½ï¿½socketï¿½×½ï¿½ï¿½ï¿½
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	
 
-	//3.½øÐÐconnet
+	//3.ï¿½ï¿½ï¿½ï¿½connet
 	struct sockaddr_in _serverAddr;
 	_serverAddr.sin_family = AF_INET;
-	_serverAddr.sin_addr.S_un.S_addr = inet_addr("192.168.1.12");
+	_serverAddr.sin_addr.s_addr = inet_addr("192.168.1.12");
 	_serverAddr.sin_port = htons(4567);
 
 	if (SOCKET_ERROR == connect(_sock, (sockaddr*)&_serverAddr, sizeof(_serverAddr)))
@@ -112,12 +112,12 @@ int main()
 		std::cout << "connect server success" << std::endl;
 	}
 
-	//3.¿ªÆôÒ»¸öÏß³Ì,·¢ËÍÊý¾ÝÃüÁî
+	//3.ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ß³ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	std::thread t(processCmd, _sock);
 	
 
 
-	//3.½øÐÐselect
+	//3.ï¿½ï¿½ï¿½ï¿½select
 	while (true)
 	{
 		fd_set fdRead;
@@ -131,9 +131,9 @@ int main()
 			std::cout << "select error" << std::endl;
 		}
 
-		if (FD_ISSET(_sock, &fdRead))	//·þÎñÆ÷·µ»ØÊý¾Ý
+		if (FD_ISSET(_sock, &fdRead))	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			//¿ªÊ¼½ÓÊÜ·þÎñ¶ËµÄÊý¾Ý
+			//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ü·ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½
 			DataHeader data;
 			memset(&data, 0, sizeof(data));
 			int _recvLen =(int)recv(_sock, (char*)&data, sizeof(data), 0);
@@ -155,11 +155,11 @@ int main()
 				}
 				if (temp.result_)
 				{
-					std::cout << "µÇÂ¼³É¹¦" << std::endl;
+					std::cout << "ï¿½ï¿½Â¼ï¿½É¹ï¿½" << std::endl;
 				}
 				else
 				{
-					std::cout << "µÇÂ¼Ê§°Ü" << std::endl;
+					std::cout << "ï¿½ï¿½Â¼Ê§ï¿½ï¿½" << std::endl;
 				}
 			}
 			break;
@@ -174,11 +174,11 @@ int main()
 				}
 				if (temp.result_)
 				{
-					std::cout << "µÇ³ö³É¹¦" << std::endl;
+					std::cout << "ï¿½Ç³ï¿½ï¿½É¹ï¿½" << std::endl;
 				}
 				else
 				{
-					std::cout << "µÇ³öÊ§°Ü" << std::endl;
+					std::cout << "ï¿½Ç³ï¿½Ê§ï¿½ï¿½" << std::endl;
 				}
 			}
 			break;
@@ -204,7 +204,7 @@ int main()
 
 
 #ifdef _WIN32
-	//6.¹Ø±Õsocket »·¾³
+	//6.ï¿½Ø±ï¿½socket ï¿½ï¿½ï¿½ï¿½
 	WSACleanup();
 #endif // _WIN32
 
@@ -213,14 +213,14 @@ int main()
 	return 0;
 }
 
-//ÊäÈëÊý¾ÝµÄÏß³Ìº¯Êý
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½ß³Ìºï¿½ï¿½ï¿½
 void processCmd(SOCKET sock)
 {
 	while (true)
 	{
 		memset(_cmdBuff, 0, CMD_BUFF);
 		memset(_recvBuff, 0, RECV_BUFF);
-		std::cout << "ÇëÊäÈëcmdÃüÁî:";
+		std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½cmdï¿½ï¿½ï¿½ï¿½:";
 		std::cin >> _cmdBuff;
 		if (0 == strcmp(_cmdBuff, "quit"))
 		{
@@ -242,10 +242,10 @@ void processCmd(SOCKET sock)
 			memset(&temp, 0, sizeof(temp));
 			temp.cmd_ = CMD::CMD_LOGIN;
 			temp.length_ = sizeof(temp);
-			std::cout << "ÇëÊäÈëÃû×Ö:";
+			std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:";
 			std::cin >> temp.name_;
 			std::cout << std::endl;
-			std::cout << "ÇëÊäÈëÃÜÂë:";
+			std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:";
 			std::cin >> temp.password_;
 			std::cout << std::endl;
 			int _sendLen = (int)send(sock, (char*)&temp, sizeof(temp), 0);
@@ -261,7 +261,7 @@ void processCmd(SOCKET sock)
 			memset(&temp, 0, sizeof(temp));
 			temp.cmd_ = CMD::CMD_LOGOUT;
 			temp.length_ = sizeof(temp);
-			std::cout << "ÇëÊäÈëÃû×Ö:";
+			std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:";
 			std::cin >> temp.name_;
 			std::cout << std::endl;
 

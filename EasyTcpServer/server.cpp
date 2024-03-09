@@ -13,7 +13,7 @@
 #include<arpa/inet.h>
 #include<string.h>
 #define SOCKET int
-#define INVALID SOCKET (SOCKET)(-0)
+#define INVALID_SOCKET (SOCKET)(-0)
 #define SOCKET_ERROR		   (-1)
 
 #endif //  _WIN32
@@ -24,6 +24,7 @@
 
 #include<iostream>
 #include<vector>
+#include<algorithm>
 
 #ifdef _WIN32
 #pragma comment(lib,"ws2_32.lib")
@@ -39,7 +40,7 @@ std::vector<SOCKET> g_cVector;
 char _recvBuff[RECV_BUFF_LEN] = { 0 };
 char _sendBuff[SEND_BUFF_LEN] = { 0 };
 
-bool is_run = true;//Ö÷Ñ­»·ÊÇ·ñÑ­»·
+bool is_run = true;//ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½Ç·ï¿½Ñ­ï¿½ï¿½
 
 enum class  CMD
 {
@@ -48,7 +49,7 @@ enum class  CMD
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT_RESULT,
 	CMD_QUIT,
-	CMD_ERROR //´ý¶¨
+	CMD_ERROR //ï¿½ï¿½ï¿½ï¿½
 };
 
 
@@ -88,7 +89,7 @@ bool process(SOCKET sock);
  
 int main()
 {
-	//1.Æô¶¯windows socketµÄ±à³Ì»·¾³
+	//1.ï¿½ï¿½ï¿½ï¿½windows socketï¿½Ä±ï¿½Ì»ï¿½ï¿½ï¿½
 
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
@@ -99,14 +100,14 @@ int main()
 	}
 #endif
 	
-	//2.´´½¨socketÌ×½Ó×Ö
+	//2.ï¿½ï¿½ï¿½ï¿½socketï¿½×½ï¿½ï¿½ï¿½
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	//3.bind °ó¶¨ÓÃÓÚ½ÓÊÜ¿Í»§¶ËÁ¬½ÓµÄÍøÂç¶Ë¿Ú
+	//3.bind ï¿½ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½Ü¿Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½Ë¿ï¿½
 	struct sockaddr_in _serverAddr = {};
 	_serverAddr.sin_family = AF_INET;
 	_serverAddr.sin_port = htons(4567);
-	_serverAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1"); 
+	_serverAddr.sin_addr.s_addr = inet_addr("192.168.1.12 ");
 	size_t _len = sizeof(_serverAddr);
 	if (bind(_sock, (sockaddr*)&_serverAddr, _len) == SOCKET_ERROR)
 	{
@@ -117,7 +118,7 @@ int main()
 		std::cout << "bind success" << std::endl;
 	}
 
-	//4.listen ¼àÌý¶Ë¿Ú
+	//4.listen ï¿½ï¿½ï¿½ï¿½ï¿½Ë¿ï¿½
 
 	if (SOCKET_ERROR == listen(_sock, 5))
 	{
@@ -129,9 +130,9 @@ int main()
 	}
 
 
-	//½ÓÊÜ¿Í»§¶ËµÄÊý¾Ý
+	//ï¿½ï¿½ï¿½Ü¿Í»ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½
 
-
+	SOCKET _maxSock = _sock;
 
 	while (is_run)
 	{
@@ -150,7 +151,7 @@ int main()
 		FD_SET(_sock, &fdWrite);
 		FD_SET(_sock, &fdExp);
 
-		//½«ÒÑÁ¬½Ó¿Í»§¶ËÒ²¼ÓÈëfd¼¯ºÏ
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿Í»ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½fdï¿½ï¿½ï¿½ï¿½
 		for (auto iter : g_cVector)
 		{
 			FD_SET(iter, &fdRead);
@@ -159,29 +160,29 @@ int main()
 		struct timeval _time;
 		_time.tv_sec = 2;
 		_time.tv_usec = 0;
-		int ret = select(_sock + 1, &fdRead, &fdWrite, &fdExp,nullptr);
+		int ret = select(_maxSock + 1, &fdRead, &fdWrite, &fdExp,nullptr);
 		if (ret < 0)
 		{
-			std::cout << "select ÈÎÎñ½áÊø" << std::endl;
+			std::cout << "select ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" << std::endl;
 			break;
 		}
 
-		//ÅÐ¶ÏÊÇ·ñÓÐÐÂµÄÁ¬½Ó
+		//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½ï¿½ï¿½
 		if (FD_ISSET(_sock, &fdRead))
 		{
-			//5.accept ½ÓÊÜ¿Í»§¶Ë
+			//5.accept ï¿½ï¿½ï¿½Ü¿Í»ï¿½ï¿½ï¿½
 
-			//½«server  sockÇå³ýÓÚfdRead
+			//ï¿½ï¿½server  sockï¿½ï¿½ï¿½ï¿½ï¿½fdRead
 			FD_CLR(_sock, &fdRead);
 
 			struct sockaddr_in _clientAddr;
 			memset(&_clientAddr, 0, sizeof(struct sockaddr_in));
 			SOCKET _clientSock = INVALID_SOCKET;
-			int _clientLen = sizeof(_clientAddr);
+			socklen_t _clientLen = sizeof(_clientAddr);
 			_clientSock = accept(_sock, (sockaddr*)&_clientAddr, &_clientLen);
 			if (INVALID_SOCKET == _clientSock)
 			{
-				std::cerr << "accept() Error,Error Code: " << WSAGetLastError() << std::endl;
+				std::cerr << "accept() Error" << std::endl;
 			}
 			else
 			{
@@ -190,20 +191,34 @@ int main()
 
 			}
 			g_cVector.push_back(_clientSock);
+			++_maxSock;
 		}
-		else if(fdRead.fd_count > 0)   //´¦ÀíÆäËû¿Í»§¶ËµÄÊý¾Ý
+#ifdef _WIN32
+		else if(fdRead.fd_count > 0)   //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í»ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			for (int i = 0; i < fdRead.fd_count; ++i)
 			{
 				process(fdRead.fd_array[i]);
 			}
 		}
+		#elif __linux__
+		else{
+			for (int i = 0; i < _maxSock;++i)
+			{
+				if(i!= _sock && FD_ISSET(i,&fdRead))
+				{
+					process(i);
+				}
+			}
+		}
+
+		#endif
 		
 
 	}
 
 #ifdef  _WIN32
-	//¹Ø±ÕÒÑÁ¬½ÓµÄÌ×½Ó×Ö 
+	//ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½×½ï¿½ï¿½ï¿½ 
 	for (auto iter : g_cVector)
 	{
 		closesocket(iter);
@@ -212,7 +227,7 @@ int main()
 	closesocket(_sock);
 
 
-	//6.¹Ø±Õsocket »·¾³
+	//6.ï¿½Ø±ï¿½socket ï¿½ï¿½ï¿½ï¿½
 	WSACleanup();
 #else
 
@@ -220,38 +235,37 @@ int main()
 	{
 		close(iter);
 	}
-	close(_sock)
+	close(_sock);
 #endif //  _WIN32
 
-
 	return 0;
-}
+};
 
-//´¦Àí¿Í»§¶ËµÄÊý¾Ý
+//ï¿½ï¿½ï¿½ï¿½ï¿½Í»ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½
 bool process(SOCKET sock)
 {
 	int _recvLen = (int)recv(sock, _recvBuff, sizeof(DataHeader), 0);//unsafe
 	if (_recvLen < 0)
 	{
-		std::cout << "Ì×½Ó×Ö" << sock << " ¶Ï¿ªÁ¬½Ó..." << std::endl;
+		std::cout << "ï¿½×½ï¿½ï¿½ï¿½" << sock << " ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½ï¿½..." << std::endl;
 
-		//½«Ì×½Ó×Ö´ÓÒÑÁ¬½ÓµÄ¼¯ºÏÖÐÉ¾³ý
+		//ï¿½ï¿½ï¿½×½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÓµÄ¼ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
 		auto iter = std::find(g_cVector.begin(), g_cVector.end(), sock);
 		if (iter == g_cVector.end())
 		{
-			std::cerr << "¸ÃÌ×½Ó×Ö²»ÔÚÒÑÁ¬½ÓµÄÌ×½Ø×Ö¼¯ºÏÖÐ,³ÌÐò´æÔÚÂß¼­Â©¶´" << std::endl;
+			std::cerr << "ï¿½ï¿½ï¿½×½ï¿½ï¿½Ö²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½×½ï¿½ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½Â©ï¿½ï¿½" << std::endl;
 			return false;
 		}
 		g_cVector.erase(iter);
 
 	}
-	//¿ªÊ¼¶ÁÈ¡ÐÅÏ¢
+	//ï¿½ï¿½Ê¼ï¿½ï¿½È¡ï¿½ï¿½Ï¢
 	switch (((DataHeader*)_recvBuff)->cmd_)
 	{
 	case CMD::CMD_LOGIN:
 	{
 	
-		//¶ÁÈ¡LOGINµÄÏà¹ØÊý¾Ý
+		//ï¿½ï¿½È¡LOGINï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGIN) - sizeof(DataHeader), 0);//unsafe
 		if (_recvLen <= 0)
 		{
@@ -282,7 +296,7 @@ bool process(SOCKET sock)
 	case CMD::CMD_LOGOUT:
 	{
 		
-		//¶ÁÈ¡LOGOUTµÄÏà¹ØÊý¾Ý
+		//ï¿½ï¿½È¡LOGOUTï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGOUT) - sizeof(DataHeader), 0); //unsafe
 		if (_recvLen <= 0)
 		{
