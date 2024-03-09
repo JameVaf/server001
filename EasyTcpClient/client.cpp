@@ -99,7 +99,7 @@ int main()
 	//3.½øÐÐconnet
 	struct sockaddr_in _serverAddr;
 	_serverAddr.sin_family = AF_INET;
-	_serverAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+	_serverAddr.sin_addr.S_un.S_addr = inet_addr("192.168.1.12");
 	_serverAddr.sin_port = htons(4567);
 
 	if (SOCKET_ERROR == connect(_sock, (sockaddr*)&_serverAddr, sizeof(_serverAddr)))
