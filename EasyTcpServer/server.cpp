@@ -4,6 +4,7 @@
 #ifdef  _WIN32
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include<Winsock2.h>
 #include<Windows.h>
 
@@ -18,21 +19,16 @@
 
 #endif //  _WIN32
 
-
-
-
-
 #include<iostream>
 #include<vector>
 #include<algorithm>
 
-#ifdef _WIN32
-#pragma comment(lib,"ws2_32.lib")
+#ifdef _WIN32 
+
+#pragma comment(lib, "ws2_32.lib")
 #endif // _WIN32
 
-
-
-const int RECV_BUFF_LEN = 128;
+	const int RECV_BUFF_LEN = 128;
 const int SEND_BUFF_LEN = 128;
 
 std::vector<SOCKET> g_cVector;
@@ -52,17 +48,12 @@ enum class  CMD
 	CMD_ERROR //����
 };
 
-
-
-
-
 typedef struct DataHeader
 {
 	CMD cmd_;
 	int length_;
 
 }DataHeader;
-
 
 typedef struct LOGIN:public DataHeader
 {
@@ -86,7 +77,7 @@ typedef struct LOGOUT_RESULT :public DataHeader
 }LOGOUT_RESULT;
 
 bool process(SOCKET sock);
- 
+
 int main()
 {
 	//1.����windows socket�ı�̻���
@@ -99,7 +90,7 @@ int main()
 		std::cerr << "WSAStartup() error" << std::endl;
 	}
 #endif
-	
+
 	//2.����socket�׽���
 	SOCKET _sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -128,7 +119,6 @@ int main()
 	{
 		std::cout << "listen success" << std::endl;
 	}
-
 
 	//���ܿͻ��˵�����
 
@@ -178,7 +168,7 @@ int main()
 			struct sockaddr_in _clientAddr;
 			memset(&_clientAddr, 0, sizeof(struct sockaddr_in));
 			SOCKET _clientSock = INVALID_SOCKET;
-			socklen_t _clientLen = sizeof(_clientAddr);
+			int _clientLen = sizeof(_clientAddr);
 			_clientSock = accept(_sock, (sockaddr*)&_clientAddr, &_clientLen);
 			if (INVALID_SOCKET == _clientSock)
 			{
@@ -213,19 +203,17 @@ int main()
 		}
 
 		#endif
-		
 
 	}
 
 #ifdef  _WIN32
-	//�ر������ӵ��׽��� 
+	//�ر������ӵ��׽���
 	for (auto iter : g_cVector)
 	{
 		closesocket(iter);
 	}
 
 	closesocket(_sock);
-
 
 	//6.�ر�socket ����
 	WSACleanup();
@@ -264,7 +252,7 @@ bool process(SOCKET sock)
 	{
 	case CMD::CMD_LOGIN:
 	{
-	
+
 		//��ȡLOGIN���������
 		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGIN) - sizeof(DataHeader), 0);//unsafe
 		if (_recvLen <= 0)
@@ -274,8 +262,6 @@ bool process(SOCKET sock)
 		std::cout << "LOGIN  Name:" << ((LOGIN*)_recvBuff)->name_ << " PassWord:" << ((LOGIN*)_recvBuff)->name_ << std::endl;
 		std::cout << "recv data Len" << ((LOGIN*)_recvBuff)->length_ << std::endl;
 
-	
-	
 		((LOGIN_RESULT*)_sendBuff)->cmd_ = CMD::CMD_LOGIN_RESULT;
 		((LOGIN_RESULT*)_sendBuff)->length_= sizeof(LOGIN_RESULT);
 		((LOGIN_RESULT*)_sendBuff)->result_ = true;
@@ -289,13 +275,11 @@ bool process(SOCKET sock)
 			std::cout << "sucess send " << _sendLen << " bytes " << std::endl;
 		}
 
-
-
 	}
 	break;
 	case CMD::CMD_LOGOUT:
 	{
-		
+
 		//��ȡLOGOUT���������
 		int _recvLen = (int)recv(sock, _recvBuff + sizeof(DataHeader), sizeof(LOGOUT) - sizeof(DataHeader), 0); //unsafe
 		if (_recvLen <= 0)
@@ -305,7 +289,7 @@ bool process(SOCKET sock)
 		std::cout << "LOGOUT  Name:" << ((LOGOUT*)_recvBuff)->name_ << std::endl;
 		std::cout << "recv data len " << ((LOGOUT*)_recvBuff)->length_ << std::endl;
 		LOGOUT_RESULT _result;
-		
+
 		((LOGOUT_RESULT*)_sendBuff)->cmd_ = CMD::CMD_LOGOUT_RESULT;
 		((LOGOUT_RESULT*)_sendBuff)->length_ = sizeof(LOGOUT_RESULT);
 		((LOGOUT_RESULT*)_sendBuff)->result_ = true;
@@ -343,7 +327,7 @@ bool process(SOCKET sock)
 			std::cout << "sucess send " << _sendLen << " bytes " << std::endl;
 		}
 
-		return false;	
+		return false;
 	}
 	break;
 	}
