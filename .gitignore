@@ -40,6 +40,9 @@ temp/
 *.vcxproj.user
 *.pdb
 
+#忽略vscode 文件
+.idea/
+.vscode/
 #不过滤的有
 !*.cpp
 !*.h
