@@ -12,7 +12,7 @@
 
 #include<unistd.h>
 #include<arpa/inet.h>
-#include<string.h>
+#include<string.h>   
 #define SOCKET int
 #define INVALID_SOCKET (SOCKET)(-0)
 #define SOCKET_ERROR		   (-1)
@@ -98,7 +98,7 @@ int main()
 	struct sockaddr_in _serverAddr = {};
 	_serverAddr.sin_family = AF_INET;
 	_serverAddr.sin_port = htons(4567);
-	_serverAddr.sin_addr.s_addr = inet_addr("192.168.1.12 ");
+	_serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1 ");
 	size_t _len = sizeof(_serverAddr);
 	if (bind(_sock, (sockaddr*)&_serverAddr, _len) == SOCKET_ERROR)
 	{
@@ -188,12 +188,13 @@ int main()
 		{
 			for (int i = 0; i < fdRead.fd_count; ++i)
 			{
+				if(FD_ISSET(i,&fdRead))
 				process(fdRead.fd_array[i]);
 			}
 		}
 		#elif __linux__
 		else{
-			for (int i = 0; i < _maxSock;++i)
+			for (int i = 0; i < _maxSock+1;++i)
 			{
 				if(i!= _sock && FD_ISSET(i,&fdRead))
 				{

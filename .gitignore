@@ -43,6 +43,7 @@ temp/
 #忽略vscode 文件
 .idea/
 .vscode/
+.test/
 #不过滤的有
 !*.cpp
 !*.h
