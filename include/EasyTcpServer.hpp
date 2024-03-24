@@ -42,10 +42,9 @@ const int RECV_BUFF = 1024; // 接收缓冲区大小
 class ClientSocket
 {
 public:
-    ClientSocket(SOCKET sockfd ,sockaddr_in clientAddr) : lastPos_(0)
+    ClientSocket(SOCKET sockfd ,sockaddr_in clientAddr) :sockfd_(sockfd),address_(clientAddr), lastPos_(0)
     {
-        sockfd_ = sockfd;
-        address_ = clientAddr;
+
         secondBuff_ = (char *)malloc(RECV_BUFF * 10);
     }
     ~ClientSocket() { free(secondBuff_); };
@@ -248,7 +247,7 @@ bool EasyTcpServer:: Accept()
             memset(&_clientAddr, 0, sizeof(struct sockaddr_in));
             SOCKET _clientSock = INVALID_SOCKET;
             int _clientLen = sizeof(_clientAddr);
-            _clientSock = accept(server_sock_, (sockaddr *)&_clientAddr, &_clientLen);
+            _clientSock = accept(server_sock_, (sockaddr *)&_clientAddr,(socklen_t *) &_clientLen);
             if (INVALID_SOCKET == _clientSock)
             {
                 std::cerr << "accept() Error" << std::endl;
@@ -299,11 +298,7 @@ bool EasyTcpServer:: Accept()
 bool EasyTcpServer::Recv(ClientSocket *clientSock)
 {
     char recvBuff[RECV_BUFF] = {0};
-    if(nullptr == recvBuff)
-    {
-        std::cerr << "Recv() Error,recv buff is a nullptr" << std::endl;
-        return false;
-    }
+
     //首先将缓冲区清零
     memset(recvBuff, 0, RECV_BUFF);
     int recvLen = recv(clientSock->socket(), recvBuff, RECV_BUFF, 0);
@@ -401,7 +396,7 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
             closesocket(clientSock->socket());
 
 #elif __linux__
-            close(clientSock);
+            close(clientSock->socket());
 #endif
             delete clientSock;
             //memset(sendBuff_, 0, SEND_BUFF);
