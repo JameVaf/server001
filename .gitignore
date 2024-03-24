@@ -27,9 +27,9 @@
 *.lib
 
 # Executables
-*.exe
-*.out
-*.app
+# *.exe
+# *.out
+# *.app
 
 #忽略vs相关文件
 .vs/
@@ -45,7 +45,7 @@ test/
 .idea/
 .vscode/
 .test/
-bin/
+
 #不过滤的有
 !*.cpp
 !*.h
