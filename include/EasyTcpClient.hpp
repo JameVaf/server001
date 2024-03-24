@@ -193,6 +193,7 @@ bool EasyTcpClient:: Select()
             Recv();
         }
     }
+    return true;
 }
 bool EasyTcpClient::Start()
 {

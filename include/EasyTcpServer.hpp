@@ -296,7 +296,7 @@ bool EasyTcpServer:: Accept()
 }
 
 // 接受网络消息
-bool Recv(ClientSocket *clientSock)
+bool EasyTcpServer::Recv(ClientSocket *clientSock)
 {
     char recvBuff[RECV_BUFF] = {0};
     if(nullptr == recvBuff)
@@ -326,14 +326,15 @@ bool Recv(ClientSocket *clientSock)
         clientSock->lastPos_ -= header->length_;
     }
 }
-// 处理网络消息
-bool OnNetMsg(ClientSocket *clientSock, DataHeader* header)
+// 处理网络消息 bool OnNetMsg(ClientSocket *clientSock, DataHeader *header);//处理网络消息
+bool EasyTcpServer::OnNetMsg(ClientSocket *clientSock, DataHeader *header)
 {
     switch (header->cmd_)
     {
     case CMD::CMD_LOGIN:
-        //登录逻辑判断不做了
-        std::cout << "client socket:"<<clientSock->socket()<<"client ip:" << inet_ntoa(clientSock->addr().sin_addr) << " port:" << ntohs(clientSock->addr().sin_port) << " LOGIN" << std::endl;
+    {
+        // 登录逻辑判断不做了
+        std::cout << "client socket:" << clientSock->socket() << "client ip:" << inet_ntoa(clientSock->addr().sin_addr) << " port:" << ntohs(clientSock->addr().sin_port) << " LOGIN" << std::endl;
 
         LOGIN_RESULT result;
         memset(&result, 0, sizeof(LOGIN_RESULT));
@@ -341,9 +342,12 @@ bool OnNetMsg(ClientSocket *clientSock, DataHeader* header)
         result.result_ = true;
         result.length_ = sizeof(LOGIN_RESULT);
         Send(clientSock, (char *)&result, result.length_);
+    }
+
 
         break;
     case CMD::CMD_LOGOUT:
+    {
         // 登录逻辑判断不做了
         LOGOUT_RESULT result;
         memset(&result, 0, sizeof(LOGOUT_RESULT));
@@ -351,13 +355,19 @@ bool OnNetMsg(ClientSocket *clientSock, DataHeader* header)
         result.result_ = true;
         result.length_ = sizeof(LOGOUT_RESULT);
         Send(clientSock, (char *)&result, result.length_);
+    }
+
         break;
     case CMD::CMD_QUIT:
+    {
         isRun_ = false;
+    }
+
         break;
     default:
         break;
     }
+    return true;
 }
 // 向客户端套接字发送n个字节的消息
 bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)

@@ -45,6 +45,7 @@ test/
 .idea/
 .vscode/
 .test/
+bin/
 #不过滤的有
 !*.cpp
 !*.h
