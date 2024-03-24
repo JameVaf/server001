@@ -34,6 +34,7 @@
 #忽略vs相关文件
 .vs/
 temp/
+test/
 *.sln
 *.vcxproj
 *.vcxproj.filters
