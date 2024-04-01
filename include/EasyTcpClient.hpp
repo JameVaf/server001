@@ -36,7 +36,7 @@
 class EasyTcpClient : public NoAbleCopy
 {
 public:
-    EasyTcpClient(const std::string ip, const std::string port);
+    EasyTcpClient(const std::string& ip, const std::string &port);
     ~EasyTcpClient();
     bool Start();   // 开启服务器
     bool Stop();    // 关闭服务器
@@ -70,7 +70,7 @@ private:
 
 
 //构造函数
-EasyTcpClient::EasyTcpClient(const std::string ip, const std::string port) : 
+EasyTcpClient::EasyTcpClient(const std::string& ip, const std::string& port) : 
 recvBuff_(nullptr),
 sendBuff_(nullptr),
 secondRecvBuff_(nullptr),
