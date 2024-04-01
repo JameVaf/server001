@@ -42,10 +42,10 @@ test/
 *.pdb
 
 #忽略vscode 文件
-.idea/
-.vscode/
-.test/
-bin/
+/.idea
+/.vscode
+/.test
+/bin
 
 #不过滤的有
 !*.cpp
