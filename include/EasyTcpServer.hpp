@@ -27,8 +27,11 @@
 #include <vector>
 #include <algorithm>
 
+
+
 #include "NoAbleCopy.hpp"
 #include "Header.hpp"
+#include "CELLTimestamp.hpp"
 
 const int SEND_BUFF = 1024; // 发送缓冲区大小
 const int RECV_BUFF = 1024; // 接收缓冲区大小
@@ -48,8 +51,8 @@ public:
         secondBuff_ = (char *)malloc(RECV_BUFF * 10);
     }
     ~ClientSocket() { free(secondBuff_); };
-    SOCKET socket() { return sockfd_; };
-    sockaddr_in addr() { return address_; };
+    SOCKET getSocket() { return sockfd_; };
+    sockaddr_in getAddr() { return address_; };
     char *secondBuff_; // 第二接受缓冲区
     int lastPos_;      // 消息缓冲区尾部位置
 
@@ -72,8 +75,9 @@ private:
     char *recvBuff_ = nullptr;            // 接收缓冲区
     char *sendBuff_ = nullptr;            // 发送缓冲区
     bool isRun_ = true;                   // 判断客户端是否继续运行
- 
-  
+    int recvPackCount_ = 0;                   //接受到的数据包个数
+    CELLTimestamp timeCount_;             //时间计数器
+
     fd_set fdRead_;                       // 读套接字集合
 
 public:
@@ -117,13 +121,13 @@ EasyTcpServer::~EasyTcpServer()
     WSACleanup();
     for(auto iter:clientSockes_)
     {
-        closesocket(iter->socket());
+        closesocket(iter->getSocket());
     }
     closesocket(server_sock_);
 #elif __linux__
     for(auto iter:clientSockes_)
     {
-        close(iter->socket());
+        close(iter->getSocket());
     }
     close(server_sock_);
 
@@ -224,10 +228,10 @@ bool EasyTcpServer:: Accept()
         // 将其他client套接字加入fdRead_
         for (auto iter : clientSockes_)
         {
-            FD_SET(iter->socket(), &fdRead_);
-            if(max_sock_ < iter->socket())
+            FD_SET(iter->getSocket(), &fdRead_);
+            if(max_sock_ < iter->getSocket())
             {
-                max_sock_ = iter->socket();
+                max_sock_ = iter->getSocket();
             }
         }
 
@@ -282,7 +286,7 @@ bool EasyTcpServer:: Accept()
         {
             for(auto iter:clientSockes_)
             {
-                if(FD_ISSET(iter->socket(),&fdRead_))
+                if(FD_ISSET(iter->getSocket(),&fdRead_))
                 {
                     Recv(iter);
                 }
@@ -301,10 +305,10 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
 
     //首先将缓冲区清零
     memset(recvBuff, 0, RECV_BUFF);
-    int recvLen = recv(clientSock->socket(), recvBuff, RECV_BUFF, 0);
+    int recvLen = recv(clientSock->getSocket(), recvBuff, RECV_BUFF, 0);
     if (recvLen <= 0)
     {
-        std::cerr << "recv() Error,recv Len = " << clientSock->socket() << std::endl;
+        std::cerr << "recv() Error,recv Len = " << clientSock->getSocket() << std::endl;
     }
     // 将内核接受缓冲区的数据移动至第二缓冲区
     memcpy(clientSock->secondBuff_ +clientSock->lastPos_,recvBuff , recvLen);
@@ -325,12 +329,21 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
 // 处理网络消息 bool OnNetMsg(ClientSocket *clientSock, DataHeader *header);//处理网络消息
 bool EasyTcpServer::OnNetMsg(ClientSocket *clientSock, DataHeader *header)
 {
+
+    //响应消息时计数器+1
+    ++recvPackCount_;
+    if(timeCount_.getElapsedSecond() >= 1.0)
+    {
+        std::cout << "socket " << clientSock->getSocket() << " Time: " << timeCount_.getElapsedSecond() << " recv Packge:" << recvPackCount_ << std::endl;
+        recvPackCount_ = 0;
+        timeCount_.updata();
+    }
     switch (header->cmd_)
     {
     case CMD::CMD_LOGIN:
     {
         // 登录逻辑判断不做了
-        std::cout << "client socket:" << clientSock->socket() << "client ip:" << inet_ntoa(clientSock->addr().sin_addr) << " port:" << ntohs(clientSock->addr().sin_port) << " LOGIN" << std::endl;
+        std::cout << "client socket:" << clientSock->getSocket() << "client ip:" << inet_ntoa(clientSock->getAddr().sin_addr) << " port:" << ntohs(clientSock->getAddr().sin_port) << " LOGIN" << std::endl;
 
         LOGIN_RESULT result;
         memset(&result, 0, sizeof(LOGIN_RESULT));
@@ -373,7 +386,7 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
         std::cerr << "Send() Error,send message is a nullptr" << std::endl;
         return false;
     }
-    int sendLen = send(clientSock->socket(), Msg, n, 0);
+    int sendLen = send(clientSock->getSocket(), Msg, n, 0);
     if(sendLen <= 0)    //client断开连接
     {
         if(sendLen == 0)
@@ -392,9 +405,9 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
         else
         {
             clientSockes_.erase(iter);
-            FD_CLR(clientSock->socket(), &fdRead_);
+            FD_CLR(clientSock->getSocket(), &fdRead_);
 #ifdef _WIN32
-            closesocket(clientSock->socket());
+            closesocket(clientSock->getSocket());
 
 #elif __linux__
             close(clientSock->socket());
