@@ -195,6 +195,7 @@ bool EasyTcpServer::Bind()
         std::cerr << "bind() Error" << std::endl;
         return false;
     }
+    return true;
 }
 // 监听套接字
 bool EasyTcpServer:: Listen()
@@ -290,8 +291,7 @@ bool EasyTcpServer:: Accept()
 
     }
 
-
-    
+    return true;
 }
 
 // 接受网络消息
@@ -320,6 +320,7 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
         memcpy(clientSock->secondBuff_ , clientSock->secondBuff_ + header->length_, header->length_);
         clientSock->lastPos_ -= header->length_;
     }
+    return true;
 }
 // 处理网络消息 bool OnNetMsg(ClientSocket *clientSock, DataHeader *header);//处理网络消息
 bool EasyTcpServer::OnNetMsg(ClientSocket *clientSock, DataHeader *header)
@@ -405,5 +406,6 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
         
     }
     std::cout << "server suceess send " << sendLen << " bytes to clien socket :" << clientSock << std::endl;
+    return true;
 }
 #endif // EASYTCPCSERVER_HPP  

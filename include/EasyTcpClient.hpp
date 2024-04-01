@@ -64,7 +64,7 @@ private:
     sockaddr_in serverAddr_; // 服务器的地址
     bool isRun_ = true;            // 判断客户端是否继续运行
     char *secondRecvBuff_ = nullptr;  //第二接收缓冲区
-    int lastPost_ = 0;              //接收缓冲区的标志位
+    int lastPos_ = 0;              //接收缓冲区的标志位
 
 };
 
@@ -75,8 +75,8 @@ recvBuff_(nullptr),
 sendBuff_(nullptr),
 secondRecvBuff_(nullptr),
 serverSock_(INVALID_SOCKET),
-lastPost_(0),
-isRun_(true)
+lastPos_(0),
+isRun_(false)
 {
     serverAddr_.sin_family = AF_INET;
     serverAddr_.sin_addr.s_addr = inet_addr(ip.c_str());
@@ -165,9 +165,11 @@ bool EasyTcpClient::Connect()
     }
     else
     {
+        isRun_ = true;
 #ifdef TESTDEBUG
         std::cout << "connct() sucess" << std::endl;
 #endif
+
     }
 
    
@@ -183,8 +185,8 @@ bool EasyTcpClient:: Select()
         FD_SET(serverSock_, &fdRead);
 
         timeval _time = {2, 0};
-        int ret = select(serverSock_ + 1, &fdRead, nullptr, nullptr, &_time);
-        if (ret < 0)
+        int ret = select(serverSock_ + 1, &fdRead, nullptr, nullptr, nullptr);
+        if (ret < 0) 
         {
             std::cout << "select error" << std::endl;
         }
@@ -225,20 +227,21 @@ void EasyTcpClient::Recv()
     if(_recvLen <= 0)
     {
         std::cerr << "recv() Error,recv Len = " <<_recvLen<< std::endl;
+        return;
     }
     //将内核接受缓冲区的数据移动至第二缓冲区
-    memcpy(secondRecvBuff_+lastPost_, recvBuff_, _recvLen);
-    lastPost_ += _recvLen;
+    memcpy(secondRecvBuff_+lastPos_, recvBuff_, _recvLen);
+    lastPos_ += _recvLen;
     //判断消息缓冲区的数据是否大于消息头
-    if(lastPost_ >= sizeof(DataHeader))
+    if(lastPos_ >= sizeof(DataHeader))
     {
         DataHeader *header = (DataHeader *)secondRecvBuff_;
-        if (lastPost_ >= header->length_)
+        if (lastPos_ >= header->length_)
         {
             OnNet(header);
         }
         memcpy(secondRecvBuff_,secondRecvBuff_+header->length_,header->length_);
-        lastPost_ -= header->length_;
+        lastPos_ -= header->length_;
     }
 
 };

@@ -7,9 +7,9 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${workspaceFolder}/src/${fileBasenameNoExtension}.cpp",
                 "-o",
-                "${workspaceFolder}/bin/${fileBasenameNoExtension}.exe",
+                "${workspaceFolder}/bin/${fileBasenameNoExtension}.out",
                 "${workspaceFolder}/include/*",
                 "-lpthread"
                 
