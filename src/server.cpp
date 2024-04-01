@@ -3,7 +3,9 @@
 
 int main()
 {
-    EasyTcpServer server("192.168.1.8",4567);
+    
+    EasyTcpServer server("192.168.1.12", 4567);
+    
     server.Start();
     server.Accept();
     return 0;

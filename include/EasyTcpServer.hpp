@@ -12,7 +12,12 @@
 #include <Winsock2.h>
 #include <Windows.h>
 
+#define unsigned int socklen_t
+
+
+
 #elif __linux__
+
 
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -26,6 +31,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include<stdlib.h>
 
 
 
@@ -100,9 +106,10 @@ public:
 EasyTcpServer::EasyTcpServer(std::string ip, unsigned short port)
 {
     server_addr_.sin_family = AF_INET;
-    server_addr_.sin_family = inet_addr(ip.c_str());
+    server_addr_.sin_addr.s_addr = inet_addr(ip.c_str());
     server_addr_.sin_port = htons(port);
 };
+
 EasyTcpServer::~EasyTcpServer()
 {
     if(nullptr != recvBuff_)
@@ -169,6 +176,10 @@ bool EasyTcpServer::Init()
         free(recvBuff_);
     }
     recvBuff_ = (char *)malloc(RECV_BUFF);
+    if(recvBuff_ == nullptr)
+    {
+        std::cout << "malloc error" << std::endl;
+    }
     if(nullptr != sendBuff_)
     {
         free(sendBuff_);
@@ -197,6 +208,7 @@ bool EasyTcpServer::Bind()
     if(SOCKET_ERROR == ret)
     {
         std::cerr << "bind() Error" << std::endl;
+        
         return false;
     }
     return true;
@@ -410,7 +422,7 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
             closesocket(clientSock->getSocket());
 
 #elif __linux__
-            close(clientSock->socket());
+            close(clientSock->getSocket());
 #endif
             delete clientSock;
             //memset(sendBuff_, 0, SEND_BUFF);
