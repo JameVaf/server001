@@ -174,15 +174,28 @@ bool EasyTcpServer::Init()
         free(recvBuff_);
     }
     recvBuff_ = (char *)malloc(RECV_BUFF);
-    if(recvBuff_ == nullptr)
+    if(nullptr == recvBuff_)
     {
-        std::cout << "malloc error" << std::endl;
+        std::cout << "malloc() error" << std::endl;
+        return false;
     }
+    memset(recvBuff_, 0, RECV_BUFF);
+
+    
+
+
+
     if(nullptr != sendBuff_)
     {
         free(sendBuff_);
     }
-    sendBuff_ = (char *)malloc(SEND_BUFF);
+    sendBuff_ = (char*)malloc(SEND_BUFF);
+    if (nullptr == sendBuff_)
+    {
+        std::cout << "malloc() error" << std::endl;
+        return false;
+    }
+    memset(sendBuff_, 0, SEND_BUFF);
 
     return true;
 }
