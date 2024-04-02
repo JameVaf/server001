@@ -12,6 +12,7 @@ int main()
     
     EasyTcpClient client(std::string("192.168.1.12"), std::string("4567"));
     client.Start(); //初始化资源
+    
     client.Connect();
     std::thread t(threadSendCmd, &client);
     client.Select();
@@ -64,6 +65,7 @@ void threadSendCmd(EasyTcpClient *client)
             std::cout << "input Error! please input login or logout or quit " << std::endl;
             continue;
         }
-        client->Send(tempBuff,sendLen);
+        for (int i = 0; i < 1000;++i)
+            client->Send(tempBuff, sendLen);
     }
 }

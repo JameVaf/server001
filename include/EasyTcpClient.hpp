@@ -166,9 +166,9 @@ bool EasyTcpClient::Connect()
     else
     {
         isRun_ = true;
-#ifdef TESTDEBUG
+
         std::cout << "connct() sucess" << std::endl;
-#endif
+
 
     }
 
