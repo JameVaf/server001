@@ -331,7 +331,8 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
     int recvLen = recv(clientSock->getSocket(), recvBuff, RECV_BUFF, 0);
     if (recvLen < 0)
     {
-        std::cerr << "recv() Error,recv Len = " << clientSock->getSocket() << std::endl;
+        std::cerr <<"socket"<< clientSock->getSocket()<<"recv() Error,recv Len = " << recvLen << std::endl;
+        return false;
     }
     // 将内核接受缓冲区的数据移动至第二缓冲区
     memcpy(clientSock->secondBuff_ +clientSock->lastPos_,recvBuff , recvLen);
