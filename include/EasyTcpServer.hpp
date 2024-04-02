@@ -329,7 +329,7 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
     //首先将缓冲区清零
     memset(recvBuff, 0, RECV_BUFF);
     int recvLen = recv(clientSock->getSocket(), recvBuff, RECV_BUFF, 0);
-    if (recvLen <= 0)
+    if (recvLen < 0)
     {
         std::cerr << "recv() Error,recv Len = " << clientSock->getSocket() << std::endl;
     }
