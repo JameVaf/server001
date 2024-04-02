@@ -12,9 +12,7 @@
 #include <Winsock2.h>
 #include <Windows.h>
 
-#define unsigned int socklen_t
-
-
+typedef  int socklen_t;
 
 #elif __linux__
 
