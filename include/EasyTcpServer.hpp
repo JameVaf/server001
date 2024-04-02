@@ -227,6 +227,7 @@ bool EasyTcpServer::Bind()
 // 监听套接字
 bool EasyTcpServer:: Listen()
 {
+    std::cout << "start listen" << std::endl;
     int ret = listen(server_sock_, 5);
     if(SOCKET_ERROR == ret)
     {
@@ -295,9 +296,9 @@ bool EasyTcpServer:: Accept()
 
             for (auto iter : clientSockes_)
             {
-                if (!Send(iter, (char *)join, join->length_))
+                if (Send(iter, (char *)join, join->length_) > 0)
                 {
-                    std::cout << "sercer Send() to client socket :" << _clientSock << " NEW_JOIN Error" << std::endl;
+                    std::cout << "server Send() to client socket :" << _clientSock << " NEW_JOIN Error" << std::endl;
                 }
             }
 
@@ -305,16 +306,15 @@ bool EasyTcpServer:: Accept()
             clientSockes_.push_back(newClient);
             max_sock_ = _clientSock;
         }
-        else 
+
+        for(auto iter:clientSockes_)
         {
-            for(auto iter:clientSockes_)
+            if(FD_ISSET(iter->getSocket(),&fdRead_))
             {
-                if(FD_ISSET(iter->getSocket(),&fdRead_))
-                {
-                    Recv(iter);
-                }
+                Recv(iter);
             }
         }
+
 
     }
 
