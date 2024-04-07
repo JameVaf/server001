@@ -26,31 +26,25 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif // _WIN32
 
-
-
-#define TEST_DEBUG
-
-
+#define TEST_DEBUG 
 
 // 客户端
 class EasyTcpClient : public NoAbleCopy
 {
 public:
-    EasyTcpClient(const std::string& ip, const std::string &port);
+    EasyTcpClient(const std::string &ip, const std::string &port);
     ~EasyTcpClient();
-    bool Start();   // 开启服务器
-    bool Stop();    // 关闭服务器
-    bool Send(char* sendMsg,int n);//发送消息
-    void Recv();   //接受消息
-    SOCKET getSock();   //得到服务器的套接字
-    bool getIsRun();    //得到服务器是否运行
-    bool Init();        // 资源初始化
-    bool Connect();     // 连接目标服务器
-    bool Select();         //select等待客户端接受数据
+    bool Start();                    // 开启服务器
+    bool Stop();                     // 关闭服务器
+    bool Send(char *sendMsg, int n); // 发送消息
+    void Recv();                     // 接受消息
+    SOCKET getSock();                // 得到服务器的套接字
+    bool getIsRun();                 // 得到服务器是否运行
+    bool Init();                     // 资源初始化
+    bool Connect();                  // 连接目标服务器
+    bool Select();                   // select等待客户端接受数据
 
 private:
-
-
     bool OnNet(DataHeader *header); // 处理网络消息
 
 public:
@@ -58,33 +52,29 @@ public:
     const int RECV_BUFF = 1024; // 接收缓冲区大小
 
 private:
-    char *recvBuff_ = nullptr;         // 接收缓冲区
-    char *sendBuff_ = nullptr;         // 发送缓冲区
-    SOCKET serverSock_ = INVALID_SOCKET;      // 服务器的套接字
-    sockaddr_in serverAddr_; // 服务器的地址
-    bool isRun_ = true;            // 判断客户端是否继续运行
-    char *secondRecvBuff_ = nullptr;  //第二接收缓冲区
-    int lastPos_ = 0;              //接收缓冲区的标志位
-
+    char *recvBuff_ = nullptr;           // 接收缓冲区
+    char *sendBuff_ = nullptr;           // 发送缓冲区
+    SOCKET serverSock_ = INVALID_SOCKET; // 服务器的套接字
+    sockaddr_in serverAddr_;             // 服务器的地址
+    bool isRun_ = true;                  // 判断客户端是否继续运行
+    char *secondRecvBuff_ = nullptr;     // 第二接收缓冲区
+    int lastPos_ = 0;                    // 接收缓冲区的标志位
 };
 
-
-//构造函数
-EasyTcpClient::EasyTcpClient(const std::string& ip, const std::string& port) : 
-recvBuff_(nullptr),
-sendBuff_(nullptr),
-secondRecvBuff_(nullptr),
-serverSock_(INVALID_SOCKET),
-lastPos_(0),
-isRun_(false)
+// 构造函数
+EasyTcpClient::EasyTcpClient(const std::string &ip, const std::string &port) : recvBuff_(nullptr),
+                                                                               sendBuff_(nullptr),
+                                                                               secondRecvBuff_(nullptr),
+                                                                               serverSock_(INVALID_SOCKET),
+                                                                               lastPos_(0),
+                                                                               isRun_(true)
 {
     serverAddr_.sin_family = AF_INET;
     serverAddr_.sin_addr.s_addr = inet_addr(ip.c_str());
     serverAddr_.sin_port = htons((unsigned short)(atoi(port.c_str())));
 };
 
-
-//初始化资源
+// 初始化资源
 bool EasyTcpClient::Init()
 {
 #ifdef _WIN32
@@ -96,50 +86,92 @@ bool EasyTcpClient::Init()
         std::cerr << "WSAStartup() error" << std::endl;
     }
 #endif // _WIN32
-
-    if(sendBuff_)
+    //判断是否是进行二次初始化,如果是,释放之前的资源
+    if (sendBuff_)
     {
         free(sendBuff_);
         sendBuff_ = nullptr;
     }
-    sendBuff_ = (char*)malloc(SEND_BUFF);
 
-    if(recvBuff_)
+    // 初始化发送缓冲区
+    sendBuff_ = (char *)malloc(SEND_BUFF);
+    if(nullptr == sendBuff_)
+    {
+        std::cerr << "malloc sendBuff_ Failed" << std::endl;
+        isRun_ = false;
+        return false;
+    }else
+    {
+        //成功申请内存,清空内存
+        memset(sendBuff_, 0, SEND_BUFF);
+    }
+
+
+    // 判断是否是进行二次初始化,如果是,释放之前的资源
+    if (recvBuff_)
     {
         free(recvBuff_);
         recvBuff_ = nullptr;
     }
+        
     recvBuff_ = (char *)malloc(RECV_BUFF);
+    if(nullptr == recvBuff_)
+    {
+        std::cerr << "malloc recvBuff_ Failed" << std::endl;
+        isRun_ = false;
+        return false;
+    }
+    else
+    {
+        // 成功申请内存,清空内存
+        memset(recvBuff_, 0, RECV_BUFF);
+    }
 
-    if(secondRecvBuff_)
+    // 判断是否是进行二次初始化,如果是,释放之前的资源
+    if (secondRecvBuff_)
     {
         free(secondRecvBuff_);
         secondRecvBuff_ = nullptr;
     }
+   
     secondRecvBuff_ = (char *)malloc(RECV_BUFF * 10);
+    if (nullptr == secondRecvBuff_)
+    {
+        std::cerr << "malloc secondRecvBuff_ Failed" << std::endl;
+        isRun_ = false;
+        return false;
+    }
+    else
+    {
+        // 成功申请内存,清空内存
+        memset(secondRecvBuff_, 0, RECV_BUFF * 10);
+    }
 
     serverSock_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if(INVALID_SOCKET == serverSock_)
+    if (INVALID_SOCKET == serverSock_)
     {
         std::cerr << "socket() Error" << std::endl;
         std::cout << serverSock_ << std::endl;
         return false;
     }
+#ifdef TEST_DEBUG
+    std::cout << "Init sucess" << std::endl;
+#endif
     return true;
 }
 
-//析构函数
+// 析构函数
 EasyTcpClient::~EasyTcpClient()
 {
-    if(sendBuff_)
+    if (sendBuff_)
     {
         free(sendBuff_);
     }
-    if(recvBuff_)
+    if (recvBuff_)
     {
         free(recvBuff_);
     }
-    if(secondRecvBuff_)
+    if (secondRecvBuff_)
     {
         free(secondRecvBuff_);
     }
@@ -150,33 +182,39 @@ EasyTcpClient::~EasyTcpClient()
 #endif // _WIN32
     serverSock_ = INVALID_SOCKET;
 #ifdef _WIN32
-    // 
+    //
     WSACleanup();
 #endif // _WIN32
 }
 
 bool EasyTcpClient::Connect()
 {
+    if(!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop Connect" << std::endl;
+#endif
+        return false;
+    }
     int ret = connect(serverSock_, (sockaddr *)&serverAddr_, sizeof(serverAddr_));
     if (SOCKET_ERROR == ret)
     {
         std::cerr << "connect Error()" << std::endl;
+        isRun_ = false;
         return false;
     }
     else
     {
         isRun_ = true;
-
-        std::cout << "connct() sucess" << std::endl;
-
-
+        #ifdef TEST_DEBUG
+        std::cout << "connct server  sucess" << std::endl;
+        #endif
     }
 
-   
     return true;
 }
 
-bool EasyTcpClient:: Select()
+bool EasyTcpClient::Select()
 {
     while (isRun_)
     {
@@ -186,7 +224,7 @@ bool EasyTcpClient:: Select()
 
         timeval _time = {2, 0};
         int ret = select(serverSock_ + 1, &fdRead, nullptr, nullptr, nullptr);
-        if (ret < 0) 
+        if (ret < 0)
         {
             std::cout << "select error" << std::endl;
         }
@@ -199,64 +237,70 @@ bool EasyTcpClient:: Select()
 }
 bool EasyTcpClient::Start()
 {
-     Init();
-    //Connect();
+ 
+    Init();
+    Connect();
+
     return true;
 };
 bool EasyTcpClient::Stop()
 {
     this->isRun_ = false;
+    
     return true;
 }
 
-bool EasyTcpClient::Send(char *sendMsg,int n)
+bool EasyTcpClient::Send(char *sendMsg, int n)
 {
-    memcmp(sendBuff_, sendMsg, n);
+    memcmp(sendBuff_, sendMsg, n);//unsafe
     int sendLen = send(serverSock_, sendBuff_, n, 0);
-    if(sendLen <= 0)
+    if (sendLen <= 0)
     {
         std::cerr << "Send Server Error from client " << std::endl;
         return false;
     }
+    #ifdef TEST_DEBUG
+    std::cout << "send " << sendLen << " bytes sucess" << std::endl;
+#endif
     return true;
 }
+
+//接受服务器数据
 void EasyTcpClient::Recv()
 {
-    //memset(recvBuff_, 0, RECV_BUFF);
+    // memset(recvBuff_, 0, RECV_BUFF);
     int _recvLen = recv(serverSock_, recvBuff_, RECV_BUFF, 0);
-    if(_recvLen <= 0)
+    if (_recvLen <= 0)
     {
-        std::cerr << "recv() Error,recv Len = " <<_recvLen<< std::endl;
+        std::cerr << "recv() Error,recv Len = " << _recvLen << std::endl;
         return;
     }
-    //将内核接受缓冲区的数据移动至第二缓冲区
-    memcpy(secondRecvBuff_+lastPos_, recvBuff_, _recvLen);
+    // 将内核接受缓冲区的数据移动至第二缓冲区
+    memcpy(secondRecvBuff_ + lastPos_, recvBuff_, _recvLen);
     lastPos_ += _recvLen;
-    //判断消息缓冲区的数据是否大于消息头
-    if(lastPos_ >= sizeof(DataHeader))
+    // 判断消息缓冲区的数据是否大于消息头
+    if (lastPos_ >= sizeof(DataHeader))
     {
         DataHeader *header = (DataHeader *)secondRecvBuff_;
         if (lastPos_ >= header->length_)
         {
             OnNet(header);
         }
-        memcpy(secondRecvBuff_,secondRecvBuff_+header->length_,header->length_);
+        memcpy(secondRecvBuff_, secondRecvBuff_ + header->length_, header->length_);
         lastPos_ -= header->length_;
     }
-
 };
 
 bool EasyTcpClient::OnNet(DataHeader *header)
 {
-    //将第二缓冲区的数据处理
-    //先读取头部信息
+    // 将第二缓冲区的数据处理
+    // 先读取头部信息
     switch (header->cmd_)
     {
     case CMD::CMD_LOGIN_RESULT:
     {
-   
- 
-        if (((LOGIN_RESULT*)header)->result_)
+
+        if (((LOGIN_RESULT *)header)->result_)
         {
             std::cout << "登录成功" << std::endl;
         }
@@ -279,28 +323,28 @@ bool EasyTcpClient::OnNet(DataHeader *header)
         }
     }
     break;
-    case CMD::CMD_NEWJOIN :{
+    case CMD::CMD_NEWJOIN:
+    {
         std::cout << "new sock:" << ((NEW_JOIN *)header)->newUserSock_ << " join ip:" << ((NEW_JOIN *)header)->newUserAddr_ << " port:" << ((NEW_JOIN *)header)->newUserPort << std::endl;
-    } break;
-        default:
+    }
+    break;
+    default:
     {
         std::cout << "from server Error" << std::endl;
         return false;
     }
     break;
-
     }
     return true;
 }
 
-
-//返回服务器的socket
+// 返回服务器的socket
 SOCKET EasyTcpClient::getSock()
 {
     return this->serverSock_;
 }
 
-//得到服务器是否继续运行
+// 得到服务器是否继续运行
 bool EasyTcpClient::getIsRun()
 {
     return this->isRun_;

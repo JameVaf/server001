@@ -1,7 +1,7 @@
 #ifndef EASYTCPCSERVER_HPP
 #define EASYTCPCSERVER_HPP
 
-#define TESTDEBUG ;
+#define TEST_DEBUG ;
 
 #pragma warning(disable : 4996)
 
@@ -49,10 +49,23 @@ const int RECV_BUFF = 1024; // 接收缓冲区大小
 class ClientSocket
 {
 public:
-    ClientSocket(SOCKET sockfd ,sockaddr_in clientAddr) :sockfd_(sockfd),address_(clientAddr), lastPos_(0)
+    ClientSocket(SOCKET sockfd ,sockaddr_in clientAddr) :
+    sockfd_(sockfd),
+    address_(clientAddr), 
+    lastPos_(0)
     {
-
-        secondBuff_ = (char *)malloc(RECV_BUFF * 10);
+        try
+        {
+            secondBuff_ = (char *)malloc(RECV_BUFF * 10);
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "malloc() failed" << std::endl;
+            std::cerr << e.what() << '\n';
+            
+        }
+        
+        
     }
     ~ClientSocket() { free(secondBuff_); };
     SOCKET getSocket() { return sockfd_; };
@@ -157,7 +170,7 @@ bool EasyTcpServer:: Start()
  // 初始化资源
 bool EasyTcpServer::Init()
 {
-    //情况读套接字集合
+    //清空读套接字集合
     FD_ZERO(&fdRead_);
 #ifdef _WIN32
     // 1.启动windows socket编程环境
@@ -166,6 +179,7 @@ bool EasyTcpServer::Init()
     if (0 != WSAStartup(ver, &dat))
     {
         std::cerr << "WSAStartup() error" << std::endl;
+        return false;
     }
 #endif // _WIN32
 
@@ -176,7 +190,7 @@ bool EasyTcpServer::Init()
     recvBuff_ = (char *)malloc(RECV_BUFF);
     if(nullptr == recvBuff_)
     {
-        std::cout << "malloc() error" << std::endl;
+        std::cout << "malloc recvBUff_ Failed" << std::endl;
         return false;
     }
     memset(recvBuff_, 0, RECV_BUFF);
@@ -189,13 +203,17 @@ bool EasyTcpServer::Init()
     {
         free(sendBuff_);
     }
-    sendBuff_ = (char*)malloc(SEND_BUFF);
+    sendBuff_ = (char *)malloc(SEND_BUFF);
     if (nullptr == sendBuff_)
     {
-        std::cout << "malloc() error" << std::endl;
+        std::cout << "malloc sendBUff_ Failed" << std::endl;
         return false;
     }
     memset(sendBuff_, 0, SEND_BUFF);
+
+    #ifdef TEST_DEBUG
+    std::cout << "Init success" << std::endl;
+#endif
 
     return true;
 }
@@ -203,6 +221,13 @@ bool EasyTcpServer::Init()
 // 返回服务器套截字
 bool EasyTcpServer::Socket()
 {
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop Socket" << std::endl;
+#endif
+        return false;
+    }
     server_sock_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(INVALID_SOCKET == server_sock_)
     {
@@ -210,11 +235,21 @@ bool EasyTcpServer::Socket()
         return false;
     }
     max_sock_ = server_sock_;
+    #ifdef TEST_DEBUG
+    std::cout << "Socket success" << std::endl;
+#endif
     return true; 
 }
 // 绑定地址
 bool EasyTcpServer::Bind()
 {
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop Bind" << std::endl;
+#endif
+        return false;
+    }
     int ret = bind(server_sock_, (sockaddr*)&server_addr_, sizeof(server_addr_));
     if(SOCKET_ERROR == ret)
     {
@@ -222,25 +257,44 @@ bool EasyTcpServer::Bind()
         
         return false;
     }
+    #ifdef TEST_DEBUG
+    std::cout << "Bind success" << std::endl;
+#endif
     return true;
 }
 // 监听套接字
 bool EasyTcpServer:: Listen()
 {
-    std::cout << "start listen" << std::endl;
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop Listen" << std::endl;
+#endif
+        return false;
+    }
+
     int ret = listen(server_sock_, 5);
     if(SOCKET_ERROR == ret)
     {
         std::cerr << "listen() Error" << std::endl;
         return false;  
     }
+#ifdef TEST_DEBUG
+    std::cout << "Listen success" << std::endl;
+#endif
     return true;
 }
 
 // 接受socket 的发生情况
 bool EasyTcpServer:: Accept()
 {
-    
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop Accept " << std::endl;
+#endif
+        return false;
+    }
     while(isRun_)
     {
 
@@ -286,21 +340,21 @@ bool EasyTcpServer:: Accept()
 
                 std::cout << "client " << _clientSock << " ip is: " << inet_ntoa(_clientAddr.sin_addr) << "port :" << ntohs(_clientAddr.sin_port) << std::endl;
             }
-            // 向所有已加入的连接发送new_join
-            NEW_JOIN *join = (NEW_JOIN *)sendBuff_;
-            join->cmd_ = CMD::CMD_NEWJOIN;
-            join->length_ = sizeof(NEW_JOIN);
-            join->newUserSock_ = _clientSock;
-            memcpy(join->newUserAddr_, inet_ntoa(_clientAddr.sin_addr), g_strLen);
-            join->newUserPort = ntohs(_clientAddr.sin_port);
+            // // 向所有已加入的连接发送new_join
+            // NEW_JOIN *join = (NEW_JOIN *)sendBuff_;
+            // join->cmd_ = CMD::CMD_NEWJOIN;
+            // join->length_ = sizeof(NEW_JOIN);
+            // join->newUserSock_ = _clientSock;
+            // memcpy(join->newUserAddr_, inet_ntoa(_clientAddr.sin_addr), g_strLen);
+            // join->newUserPort = ntohs(_clientAddr.sin_port);
 
-            for (auto iter : clientSockes_)
-            {
-                if (Send(iter, (char *)join, join->length_) > 0)
-                {
-                    std::cout << "server Send() to client socket :" << _clientSock << " NEW_JOIN Error" << std::endl;
-                }
-            }
+            // for (auto iter : clientSockes_)
+            // {
+            //     if (Send(iter, (char *)join, join->length_) > 0)
+            //     {
+            //         std::cout << "server Send() to client socket :" << _clientSock << " NEW_JOIN " << std::endl;
+            //     }
+            // }
 
             ClientSocket *newClient = new ClientSocket(_clientSock, _clientAddr);
             clientSockes_.push_back(newClient);
@@ -324,6 +378,13 @@ bool EasyTcpServer:: Accept()
 // 接受网络消息
 bool EasyTcpServer::Recv(ClientSocket *clientSock)
 {
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop RECV" << std::endl;
+#endif
+        return false;
+    }
     char recvBuff[RECV_BUFF] = {0};
 
     //首先将缓冲区清零
@@ -350,9 +411,17 @@ bool EasyTcpServer::Recv(ClientSocket *clientSock)
     }
     return true;
 }
+
 // 处理网络消息 bool OnNetMsg(ClientSocket *clientSock, DataHeader *header);//处理网络消息
 bool EasyTcpServer::OnNetMsg(ClientSocket *clientSock, DataHeader *header)
 {
+    if (!isRun_)
+    {
+#ifdef TEST_DEBUG
+        std::cout << "isRun_ :value is false,Stop OnNetMsg" << std::endl;
+#endif
+        return false;
+    }
 
     //响应消息时计数器+1
     ++recvPackCount_;
@@ -367,7 +436,7 @@ bool EasyTcpServer::OnNetMsg(ClientSocket *clientSock, DataHeader *header)
     case CMD::CMD_LOGIN:
     {
         // 登录逻辑判断不做了
-        std::cout << "client socket:" << clientSock->getSocket() << "client ip:" << inet_ntoa(clientSock->getAddr().sin_addr) << " port:" << ntohs(clientSock->getAddr().sin_port) << " LOGIN" << std::endl;
+        //std::cout << "client socket:" << clientSock->getSocket() << "client ip:" << inet_ntoa(clientSock->getAddr().sin_addr) << " port:" << ntohs(clientSock->getAddr().sin_port) << " LOGIN" << std::endl;
 
         LOGIN_RESULT result;
         memset(&result, 0, sizeof(LOGIN_RESULT));
@@ -442,7 +511,7 @@ bool EasyTcpServer::Send(ClientSocket * clientSock, char *Msg, int n)
         }
         
     }
-    std::cout << "server suceess send " << sendLen << " bytes to clien socket :" << clientSock << std::endl;
+    //std::cout << "server suceess send " << sendLen << " bytes to clien socket :" << clientSock << std::endl;
     return true;
 }
 #endif // EASYTCPCSERVER_HPP  
