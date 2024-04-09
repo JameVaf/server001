@@ -24,7 +24,7 @@ typedef struct DataHeader
     CMD cmd_;
     int length_;
 
-} DataHeader;
+} DataHeader; 
 
 //登录命令
 typedef struct LOGIN : public DataHeader

@@ -262,6 +262,8 @@ bool EasyTcpClient::Send(char *sendMsg, int n)
     #ifdef TEST_DEBUG
     std::cout << "send " << sendLen << " bytes sucess" << std::endl;
 #endif
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     return true;
 }
 

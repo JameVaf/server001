@@ -9,7 +9,7 @@
 void threadSendCmd(EasyTcpClient *client);
 void threadInputCmd();
 void sendThread(int id);
-const int cCount = 1000;    //连接的客户端数量
+const int cCount = 100;    //连接的客户端数量
 const int tCount = 4;       //开启的线程数量
 EasyTcpClient *clients[cCount];
 
@@ -88,12 +88,12 @@ void threadSendCmd(EasyTcpClient *client)
 
 void sendThread(int id)
 {
-    std::cout << "thread id " << id << "start " << std::endl;
+    //std::cout << "thread id " << id << "start " << std::endl;
     //4个线程 ID:1~4
     int c = cCount / 4;
     int begin = (id - 1) *c;
     int end = id * c - 1;
-    std::cout << "start for" << std::endl;
+    //std::cout << "start for" << std::endl;
     for (int i = begin; i <= end; ++i)
     {
        
@@ -101,7 +101,7 @@ void sendThread(int id)
         {
             return;
         }
-        std::cout<<"start try"<<std::endl;
+        //std::cout<<"start try"<<std::endl;
         // 开始初始化自己线程负责的客户端连接
         try
         {
